@@ -1,0 +1,76 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "hqbase",
+  "main": "worker/index.ts",
+  "preview_urls": false,
+  "compatibility_date": "2026-07-28",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": [
+      "/api/*",
+      "/management/*",
+      "/mcp",
+      "/mcp/*",
+      "/.well-known/*",
+      "/skills/hqbase-mail/SKILL.md",
+      "/skills/hqbase-mailbox/SKILL.md",
+      "/skills/hqbase-provisioner/SKILL.md",
+      "/AGENTS.md",
+      "/agents.md"
+    ]
+  },
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "enabled": true,
+      "invocation_logs": false
+    }
+  },
+  "secrets": {
+    "required": ["BETTER_AUTH_SECRET"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "posterity-mail",
+      "database_id": "c1be3fb6-a1f5-41d5-92c7-99b0afead871",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "MAIL_OBJECTS",
+      "bucket_name": "posterity-mail","preview_bucket_name": "posterity-mail"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [{ "name": "MAIL_EVENTS", "class_name": "MailEvents" }]
+  },
+  "migrations": [
+    {
+      "tag": "mail-events-v1",
+      "new_sqlite_classes": ["MailEvents"]
+    }
+  ],
+  "queues": {
+    "producers": [{ "binding": "HQBASE_JOBS", "queue": "hqbase-jobs-mail" }],
+    "consumers": [
+      {
+        "queue": "hqbase-jobs-mail",
+        "dead_letter_queue": "hqbase-jobs-dlq",
+        "max_batch_size": 10,
+        "max_batch_timeout": 5,
+        "max_retries": 3
+      }
+    ]
+  },
+  "triggers": { "crons": ["17 3 * * *"] },
+  "send_email": [
+    {
+      "name": "MAIL_SENDER"
+    }
+  ]
+}
